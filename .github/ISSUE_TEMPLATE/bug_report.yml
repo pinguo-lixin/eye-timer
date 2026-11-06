@@ -1,0 +1,24 @@
+name: 问题反馈
+description: 报告运行、安装或显示问题
+body:
+  - type: input
+    id: version
+    attributes:
+      label: EyeTimer 版本
+      placeholder: 例如 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: macOS 版本与芯片
+      placeholder: 例如 macOS 15.7，Apple M2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤与实际表现
+      description: 请描述做了什么、期望出现什么、实际出现什么；可附截图。
+    validations:
+      required: true

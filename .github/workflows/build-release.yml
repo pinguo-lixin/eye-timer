@@ -1,0 +1,101 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: macOS · ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.0'
+      APP_ARCH: ${{ matrix.arch }}
+      APP_BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Validate version and architecture
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          test "$(uname -m)" = "$APP_ARCH"
+          python3 - <<'PY'
+          import os, pathlib, re
+          version = pathlib.Path('VERSION').read_text().strip()
+          assert re.fullmatch(r'\d+\.\d+\.\d+', version), 'VERSION must be X.Y.Z'
+          if os.environ['REF_TYPE'] == 'tag':
+              assert os.environ['REF_NAME'] == f'v{version}', 'Tag must match VERSION'
+              assert pathlib.Path(f'docs/releases/{version}.md').is_file(), 'Release notes are required'
+          PY
+      - name: Build and run regression checks
+        run: bash Tools/run_checks.sh
+      - name: Create and verify download packages
+        run: bash Tools/package_release.sh --skip-build
+      - name: Upload download packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: EyeTimer-${{ matrix.arch }}
+          path: dist/releases/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: EyeTimer-*
+          path: release-assets
+          merge-multiple: true
+      - name: Verify complete release and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          test "$RELEASE_TAG" = "v$version"
+          for arch in arm64 x86_64; do
+            for extension in dmg zip sha256; do
+              test -s "release-assets/EyeTimer-$version-$arch.$extension"
+            done
+          done
+          (cd release-assets && sha256sum --check ./*.sha256)
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag --title "EyeTimer $version" \
+            --notes-file "docs/releases/$version.md" --latest

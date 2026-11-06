@@ -1,0 +1,15 @@
+EyeTimer · 护眼提醒
+
+安装：将 EyeTimer.app 拖入 Applications（应用程序），然后从应用程序打开。
+应用在菜单栏显示眼睛图标；点击图标，选择“开始”。
+
+Apple Silicon（M 系列）请选择 arm64 版本，Intel Mac 请选择 x86_64 版本。
+需要 macOS 13 或更高版本。
+
+首次打开：当前版本尚未经过 Apple 公证，macOS 可能阻止打开。
+确认下载来自本项目 GitHub Releases 后，可以按照 Apple 官方说明，
+在“系统设置 → 隐私与安全性”中查看“仍要打开”选项：
+https://support.apple.com/zh-cn/102445
+
+下载与帮助：https://github.com/pinguo-lixin/eye-timer
+问题反馈：https://github.com/pinguo-lixin/eye-timer/issues

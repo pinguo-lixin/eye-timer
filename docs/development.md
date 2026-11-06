@@ -1,0 +1,66 @@
+# 开发与测试
+
+要求 macOS 13+、Xcode Command Line Tools 或完整 Xcode。无第三方运行时依赖。
+
+## 本地构建
+
+```bash
+bash build_app.sh
+open dist/EyeTimer.app
+```
+
+版本号来自根目录 VERSION；APP_VERSION 可显式覆盖，APP_BUILD_NUMBER 默认为 1。
+APP_ARCH 支持 arm64 和 x86_64，默认使用当前机器架构。默认是临时签名，不启用 App Sandbox。
+
+## 测试
+
+```bash
+bash Tools/run_checks.sh
+```
+
+覆盖 53 项计时与设置、84 项菜单与事件路由、15 项样式和缩放渲染、5 项应用包检查，以及发布构建和严格签名校验。
+测试输出位于 `.build/checks/`。测试使用独立可执行程序的配置域，不安装应用，也不修改系统授权。
+
+隔离沙盒实验与人工测试边界见 [分发评估](distribution-assessment.md)。
+
+## 源码结构
+
+- `Sources/EyeTimer/App`：应用生命周期和菜单栏。
+- `Sources/EyeTimer/Core`：计时状态机、设置、统计、提醒、窗口与鼠标输入。
+- `Sources/EyeTimer/Views`：挂件、休息引导和设置界面。
+- `Resources`：应用信息与安装说明。
+- `Tools`：构建、打包、测试和图标生成。
+
+## 计时与窗口
+
+剩余时间由绝对结束时间推导，每秒通知一次界面；暂停和空闲时取消计时定时器。
+设置页不订阅计时变化，菜单栏只更新变化的内容。
+
+可视挂件位于桌面图标层之下，透明输入窗口位于 floating 层。优先使用事件 tap；不可用时由输入窗口与全局监视器提供兼容路径。
+遮挡检查避免抢走其它应用的点击。拖动采用屏幕绝对坐标差，不使用随窗口移动而变化的局部坐标。
+窗口层级守卫只在需要时纠正层级；销毁时撤销定时器。
+
+## 命令行与诊断
+
+- `--start`：启动时开始计时。
+- `--settings`：打开设置。
+- `--demo-break`：显示休息引导。
+- `--demo-menu`：打开菜单栏菜单。
+- `EYETIMER_FORCE_FALLBACK=1`：跳过事件 tap，强制兼容路径。
+- `EYETIMER_DISABLE_MARQUEE_FIX=1`：禁用桌面选框修复，仅作对照实验。
+- `--move X Y`：仅在任一诊断开关打开时生效，使用 AppKit 屏幕坐标。
+
+正常运行不要启用诊断开关。`Tools/visual_marquee_test.swift` 等交互诊断工具需要相应系统权限，部分历史工具假定单显示器 3440×1440；不要作为无人值守 CI 检查运行。
+
+## 性能测量
+
+```bash
+python3 Tools/measure_cpu.py --pid <进程号> --seconds 25
+```
+
+按累计 CPU 时间计算区间平均值，100% 表示占满一个核心。对比时保持计时、外观、窗口可见性和桌面活动相同。
+2026-11-06 本机测量：计时与设置窗口打开时 7.52% → 1.24%；仅挂件计时 1.20%。这不是跨设备保证。
+
+## 发布
+
+参见 [GitHub Releases 发布流程](releasing.md)。
