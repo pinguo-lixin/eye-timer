@@ -25,7 +25,11 @@ info = plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())
 assert info['CFBundleIdentifier'] == 'com.eyetimer.app'
 assert info['LSUIElement'] is True
 assert (bundle / 'Contents/MacOS' / info['CFBundleExecutable']).is_file()
-assert (bundle / 'Contents/Resources' / info['CFBundleIconFile']).is_file()
+icon = bundle / 'Contents/Resources' / info['CFBundleIconFile']
+# CFBundleIconFile may omit the .icns extension; PNG fallback names include it.
+if not icon.suffix:
+    icon = icon.with_suffix('.icns')
+assert icon.is_file(), f'Missing app icon: {icon}'
 assert (bundle / 'Contents/PkgInfo').read_bytes() == b'APPL????'
 print('App Bundle validated: 5 checks')
 PY
