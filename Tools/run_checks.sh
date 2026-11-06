@@ -15,6 +15,8 @@ swiftc -o "$check_root/e2e" Tools/E2E/main.swift \
 "$check_root/e2e"
 swiftc -o "$check_root/menu" Tools/WidgetMenuTests/main.swift Sources/EyeTimer/Core/*.swift Sources/EyeTimer/Views/*.swift
 "$check_root/menu"
+swiftc -o "$check_root/overlay" Tools/OverlayLifecycleTests/main.swift Sources/EyeTimer/Core/*.swift Sources/EyeTimer/Views/*.swift
+"$check_root/overlay"
 swiftc -o "$check_root/preview" Tools/WidgetPreview/main.swift Sources/EyeTimer/Core/*.swift Sources/EyeTimer/Views/*.swift
 "$check_root/preview" "$check_root/widget-previews"
 bash build_app.sh

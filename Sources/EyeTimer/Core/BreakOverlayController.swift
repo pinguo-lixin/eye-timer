@@ -74,13 +74,20 @@ final class BreakOverlayController: NSObject, ObservableObject {
     }
 
     func hide(notify: Bool = true) {
+        let wasShowing = isShowing
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         countdownTimer?.invalidate()
         countdownTimer = nil
-        panel?.orderOut(nil)
+        // A hidden hosting view keeps its repeatForever animations running.
+        // Tear it down before callbacks can show the next rest window.
+        let dismissedPanel = panel
+        panel = nil
+        dismissedPanel?.orderOut(nil)
+        dismissedPanel?.contentView = nil
+        dismissedPanel?.close()
         isShowing = false
-        if notify {
+        if notify && wasShowing {
             onDismiss?()
         }
     }
