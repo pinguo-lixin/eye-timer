@@ -9,7 +9,8 @@
 - 推送 `vX.Y.Z` 标签：两种架构都通过测试、打包和校验后，创建公开 GitHub Release，上传六个附件。
 
 普通分支工作流仅使用仓库读取权限。仅发布 job 使用内置 `GITHUB_TOKEN` 的 `contents: write` 权限，无需配置个人 token 或付费 Apple 开发者凭据。
-官方 Actions 固定到已核对的提交。GitHub 提供的 macos-15 / macos-15-intel 分别用于 arm64 / x86_64，任务启动时再次检查实际架构。
+官方 Actions 固定到已核对的提交。GitHub 提供的 macos-15 / macos-26-intel 分别用于 arm64 / x86_64，任务启动时再次检查实际架构。
+Intel 使用 macOS 26 runner，避开 macos-15-intel 已报告的 [SwiftUI / Metal 虚拟显卡崩溃](https://github.com/actions/runner-images/issues/15251)。两种架构均保留原生渲染检查；应用部署目标仍为 macOS 13，构建机版本不代表已在所有受支持系统上实机验证。
 
 ## 发布步骤
 

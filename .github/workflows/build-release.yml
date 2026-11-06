@@ -26,7 +26,9 @@ jobs:
         include:
           - runner: macos-15
             arch: arm64
-          - runner: macos-15-intel
+          # macos-15-intel has a reported SwiftUI/Metal VM crash:
+          # https://github.com/actions/runner-images/issues/15251
+          - runner: macos-26-intel
             arch: x86_64
     env:
       MACOSX_DEPLOYMENT_TARGET: '13.0'
